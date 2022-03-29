@@ -2,6 +2,17 @@ provider "aws" {
   region = "us-east-1"
 }
 
+terraform {
+  backend "s3" {
+    bucket = "terraform-state-elden-ring-is-amazing"
+    key    = "global/s3/terraform.tfstate"
+    region = "us-east-1"
+
+    dynamodb_table = "terraform-state-locks"
+    encrypt        = true
+  }
+}
+
 #* S3 stores the state file in a way that is
 #* both shared and accessible by all users
 resource "aws_s3_bucket" "terraform_state" {
@@ -39,7 +50,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform-state" 
 
 #* DynamoDB table to handle locking to the state file
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "terraform-uar-state"
+  name         = "terraform-state-locks"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -47,4 +58,14 @@ resource "aws_dynamodb_table" "terraform_locks" {
     name = "LockID"
     type = "S"
   }
+}
+
+output "s3_bucket_arn" {
+  value       = aws_s3_bucket.terraform_state.arn
+  description = "The ARN of the S3 bucket"
+}
+
+output "dynamodb_table_name" {
+  value       = aws_dynamodb_table.terraform_locks.name
+  description = "The name of the DynamoDB table"
 }
